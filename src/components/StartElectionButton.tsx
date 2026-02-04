@@ -2,6 +2,7 @@
 
 import { startElection } from '@/app/actions';
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function StartElectionButton({ communityId, communityName }: { communityId: string, communityName: string }) {
   const [loading, setLoading] = useState(false);
