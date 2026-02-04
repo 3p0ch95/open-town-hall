@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import StartElectionButton from '@/components/StartElectionButton';
 
 export const revalidate = 0;
 
@@ -37,9 +38,7 @@ export default async function ElectionsPage({ params }: { params: Promise<{ name
             <li>Voting is open to all community members.</li>
             <li>At the end of the term, the top 3 candidates become mods.</li>
         </ul>
-        <button className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition-colors">
-            Start New Election (Demo)
-        </button>
+        <StartElectionButton communityId={community.id} communityName={community.name} />
       </div>
 
       <h3 className="text-lg font-bold text-gray-900 mt-8 mb-4">Active Elections</h3>
