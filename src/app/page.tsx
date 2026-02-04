@@ -21,20 +21,7 @@ export default async function Home() {
     .limit(5);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🏛️</span>
-            <span className="font-bold text-xl tracking-tight">OpenTownHall</span>
-          </div>
-          <div className="flex gap-4">
-            <button className="text-gray-600 hover:text-gray-900 font-medium">Log In</button>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-medium transition-colors">Sign Up</button>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen font-sans">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 md:grid-cols-12 gap-8">
         {/* Left Sidebar - Navigation */}
         <aside className="hidden md:block md:col-span-3 lg:col-span-2 space-y-4">
