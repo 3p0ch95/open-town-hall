@@ -15,12 +15,10 @@ export default function CreatePostForm({ preselectedCommunityId }: { preselected
   const router = useRouter();
 
   useEffect(() => {
-    // Get current user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
 
-    // Fetch communities to populate the dropdown
     const fetchCommunities = async () => {
       const { data } = await supabase.from('communities').select('id, name');
       if (data) {
@@ -45,29 +43,26 @@ export default function CreatePostForm({ preselectedCommunityId }: { preselected
     } else {
       setTitle('');
       setBody('');
-      // Force refresh to update Navbar usage count too?
-      // window.location.reload(); // Hard refresh to update Navbar count for now
       router.refresh(); 
     }
   };
 
-
   if (!user) {
     return (
-      <div className="bg-white p-4 rounded-md border border-gray-200 shadow-sm flex items-center justify-between text-gray-500">
+      <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 shadow-sm flex items-center justify-between text-zinc-500">
         <span>Log in to start posting!</span>
-        <button onClick={() => router.push('/auth')} className="text-blue-600 font-bold hover:underline">Log In</button>
+        <button onClick={() => router.push('/auth')} className="text-emerald-500 font-bold hover:underline">Log In</button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-4 rounded-md border border-gray-200 shadow-sm space-y-3">
+    <form onSubmit={handleSubmit} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 shadow-sm space-y-3 transition-colors focus-within:border-zinc-700">
       <div className="flex gap-2 mb-2">
         <select 
           value={communityId}
           onChange={(e) => setCommunityId(e.target.value)}
-          className="bg-gray-100 border border-gray-300 text-gray-900 text-xs rounded-full focus:ring-blue-500 focus:border-blue-500 block px-3 py-1"
+          className="bg-zinc-950 border border-zinc-700 text-zinc-300 text-xs rounded-full focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-1 outline-none"
         >
           {communities.map((c) => (
             <option key={c.id} value={c.id}>r/{c.name}</option>
@@ -81,21 +76,21 @@ export default function CreatePostForm({ preselectedCommunityId }: { preselected
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         required
-        className="w-full bg-transparent text-lg font-medium placeholder-gray-400 focus:outline-none" 
+        className="w-full bg-transparent text-lg font-medium text-white placeholder-zinc-600 focus:outline-none" 
       />
       
       <textarea 
         placeholder="Text (optional)" 
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        className="w-full bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:outline-none resize-y min-h-[60px]" 
+        className="w-full bg-transparent text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none resize-y min-h-[60px]" 
       />
 
-      <div className="flex justify-end pt-2 border-t border-gray-100">
+      <div className="flex justify-end pt-2 border-t border-zinc-800">
         <button 
           type="submit" 
           disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-full transition-colors disabled:opacity-50"
+          className="bg-zinc-100 hover:bg-white text-zinc-900 text-sm font-bold py-1.5 px-4 rounded-full transition-all disabled:opacity-50 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]"
         >
           {loading ? 'Posting...' : 'Post'}
         </button>

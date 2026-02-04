@@ -35,10 +35,8 @@ async function spendAction(userId: string) {
 }
 
 export async function createPost(title: string, body: string, communityId: string, userId: string) {
-    // 1. Spend Action
     try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
 
-    // 2. Create Post
     const { error } = await supabase.from('posts').insert({
         title,
         body,
@@ -52,10 +50,47 @@ export async function createPost(title: string, body: string, communityId: strin
     return { success: true };
 }
 
+export async function createComment(postId: string, body: string, userId: string, path: string) {
+    try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
+
+    const { error } = await supabase.from('comments').insert({
+        post_id: postId,
+        body,
+        author_id: userId
+    });
+
+    if (error) return { error: error.message };
+
+    revalidatePath(path);
+    return { success: true };
+}
+
+export async function deletePost(postId: string, userId: string, communityId: string) {
+    // 1. Check if user is a moderator for this community
+    const { data: mod } = await supabase
+        .from('moderators')
+        .select('*')
+        .eq('community_id', communityId)
+        .eq('user_id', userId)
+        .single();
+
+    if (!mod) {
+        return { error: 'You do not have moderator permissions in this community.' };
+    }
+
+    // 2. Delete
+    // Note: We need cascade delete on comments, which we added in SQL
+    const { error } = await supabase.from('posts').delete().eq('id', postId);
+
+    if (error) return { error: error.message };
+
+    revalidatePath('/');
+    return { success: true };
+}
+
 export async function startElection(communityId: string, communityName: string, userId: string) {
   try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
 
-  // 1. Check for active elections
   const { data: existing } = await supabase
     .from('elections')
     .select('id')
@@ -67,7 +102,6 @@ export async function startElection(communityId: string, communityName: string, 
     return { error: 'An election is already in progress!' };
   }
 
-  // 2. Create new election (30 days)
   const startDate = new Date();
   const endDate = new Date();
   endDate.setDate(startDate.getDate() + 30);
@@ -88,7 +122,6 @@ export async function startElection(communityId: string, communityName: string, 
 export async function declareCandidacy(electionId: string, userId: string, manifesto: string, communityName: string) {
   try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
 
-  // Check if already running
   const { data: existing } = await supabase
     .from('candidates')
     .select('id')
@@ -116,7 +149,6 @@ export async function declareCandidacy(electionId: string, userId: string, manif
 export async function castVote(electionId: string, candidateId: string, voterId: string, communityName: string) {
     try { await spendAction(voterId); } catch (e: any) { return { error: e.message }; }
 
-    // 1. Check if user already voted in this election
     const { data: existingVote } = await supabase
         .from('election_votes')
         .select('voter_id')
@@ -128,7 +160,6 @@ export async function castVote(electionId: string, candidateId: string, voterId:
         return { error: 'You have already voted in this election.' };
     }
 
-    // 2. Insert vote
     const { error: voteError } = await supabase
         .from('election_votes')
         .insert({
