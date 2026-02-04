@@ -10,13 +10,16 @@ export default function StartElectionButton({ communityId, communityName }: { co
     if (!confirm('Are you sure you want to start a new 30-day election cycle?')) return;
     
     setLoading(true);
-    const res = await startElection(communityId, communityName);
+    
+    // Need user ID
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { alert('Log in first'); setLoading(false); return; }
+
+    const res = await startElection(communityId, communityName, session.user.id);
     setLoading(false);
 
     if (res.error) {
       alert(res.error);
-    } else {
-        // success, UI updates via revalidatePath
     }
   };
 

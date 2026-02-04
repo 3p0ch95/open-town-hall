@@ -1,5 +1,6 @@
 'use client';
 
+import { createPost } from '@/app/actions';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -24,36 +25,32 @@ export default function CreatePostForm({ preselectedCommunityId }: { preselected
       const { data } = await supabase.from('communities').select('id, name');
       if (data) {
         setCommunities(data);
-        if (!communityId && data.length > 0) setCommunityId(data[0].id); // Default if not preselected
+        if (!preselectedCommunityId && !communityId && data.length > 0) setCommunityId(data[0].id);
       }
     };
     fetchCommunities();
-  }, []);
+  }, [preselectedCommunityId, communityId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return alert('You must be logged in!');
     setLoading(true);
 
-    try {
-      const { error } = await supabase.from('posts').insert({
-        title,
-        body,
-        community_id: communityId,
-        author_id: user.id
-      });
+    const res = await createPost(title, body, communityId, user.id);
 
-      if (error) throw error;
+    setLoading(false);
 
+    if (res.error) {
+      alert(res.error);
+    } else {
       setTitle('');
       setBody('');
-      router.refresh(); // Refresh server data
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
+      // Force refresh to update Navbar usage count too?
+      // window.location.reload(); // Hard refresh to update Navbar count for now
+      router.refresh(); 
     }
   };
+
 
   if (!user) {
     return (
