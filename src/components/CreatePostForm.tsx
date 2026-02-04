@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-export default function CreatePostForm() {
+export default function CreatePostForm({ preselectedCommunityId }: { preselectedCommunityId?: string }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [communityId, setCommunityId] = useState('');
+  const [communityId, setCommunityId] = useState(preselectedCommunityId || '');
   const [communities, setCommunities] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -24,7 +24,7 @@ export default function CreatePostForm() {
       const { data } = await supabase.from('communities').select('id, name');
       if (data) {
         setCommunities(data);
-        if (data.length > 0) setCommunityId(data[0].id); // Default to first
+        if (!communityId && data.length > 0) setCommunityId(data[0].id); // Default if not preselected
       }
     };
     fetchCommunities();
