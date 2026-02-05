@@ -8,8 +8,8 @@ export const revalidate = 0; // Disable static caching
 
 export default async function Home() {
   // 1. Check User Session
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
+  // Use getUser() instead of getSession() for stricter validation
+  const { data: { user } } = await supabase.auth.getUser();
 
   // --------------------------------------------------------------------------
   // LOGGED OUT VIEW: "OpenClaw Style" Landing Page
