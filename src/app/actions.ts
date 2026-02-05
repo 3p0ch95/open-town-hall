@@ -1,17 +1,17 @@
-'use server';
-
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/server-supabase';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 // Helper: Get System Config
 async function getConfig(key: string, defaultValue: string) {
+    const supabase = await createClient();
     const { data } = await supabase.from('system_config').select('value').eq('key', key).single();
     return data?.value || defaultValue;
 }
 
 // Helper: Check and Spend Daily Action
 async function spendAction(userId: string) {
+    const supabase = await createClient();
     const today = new Date().toISOString().split('T')[0];
     
     // 1. Get dynamic limit
@@ -46,6 +46,7 @@ async function spendAction(userId: string) {
 
 // Helper: Check Ban Status
 async function checkBan(userId: string, communityId: string) {
+    const supabase = await createClient();
     const { data } = await supabase
         .from('community_bans')
         .select('reason')
@@ -59,6 +60,7 @@ async function checkBan(userId: string, communityId: string) {
 }
 
 export async function createPost(title: string, body: string, communityId: string, userId: string, imageUrl: string | null = null) {
+    const supabase = await createClient();
     try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
     try { await checkBan(userId, communityId); } catch (e: any) { return { error: e.message }; }
 
@@ -77,6 +79,7 @@ export async function createPost(title: string, body: string, communityId: strin
 }
 
 export async function createComment(postId: string, body: string, userId: string, path: string, parentId: string | null = null) {
+    const supabase = await createClient();
     try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
     
     // Need community_id to check ban... fetch post first
@@ -99,6 +102,7 @@ export async function createComment(postId: string, body: string, userId: string
 }
 
 export async function deletePost(postId: string, userId: string, communityId: string) {
+    const supabase = await createClient();
     // 1. Check Mod
     const { data: mod } = await supabase
         .from('moderators')
@@ -128,6 +132,7 @@ export async function deletePost(postId: string, userId: string, communityId: st
 }
 
 export async function banUser(targetUsername: string, communityId: string, modId: string, reason: string) {
+    const supabase = await createClient();
     // 1. Check Mod
     const { data: mod } = await supabase.from('moderators').select('*').eq('community_id', communityId).eq('user_id', modId).single();
     if (!mod) return { error: 'Unauthorized.' };
@@ -159,6 +164,7 @@ export async function banUser(targetUsername: string, communityId: string, modId
 
 // ... Elections ...
 export async function startElection(communityId: string, communityName: string, userId: string) {
+  const supabase = await createClient();
   try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
 
   const { data: existing } = await supabase
@@ -190,6 +196,7 @@ export async function startElection(communityId: string, communityName: string, 
 }
 
 export async function declareCandidacy(electionId: string, userId: string, manifesto: string, communityName: string) {
+  const supabase = await createClient();
   try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
 
   const { data: existing } = await supabase
@@ -217,6 +224,7 @@ export async function declareCandidacy(electionId: string, userId: string, manif
 }
 
 export async function castVote(electionId: string, candidateId: string, voterId: string, communityName: string) {
+    const supabase = await createClient();
     try { await spendAction(voterId); } catch (e: any) { return { error: e.message }; }
 
     const { data: existingVote } = await supabase
@@ -251,6 +259,7 @@ export async function castVote(electionId: string, candidateId: string, voterId:
 
 // ... Constitution ...
 export async function createProposal(title: string, description: string, key: string, value: string, userId: string) {
+    const supabase = await createClient();
     try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
 
     const endDate = new Date();
@@ -271,6 +280,7 @@ export async function createProposal(title: string, description: string, key: st
 }
 
 export async function voteOnProposal(proposalId: string, vote: 'yes' | 'no', userId: string) {
+    const supabase = await createClient();
     try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
 
     const { data: existing } = await supabase.from('proposal_votes').select('user_id').eq('proposal_id', proposalId).eq('user_id', userId).single();
