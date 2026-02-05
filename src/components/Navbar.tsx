@@ -62,9 +62,12 @@ export default function Navbar() {
                     ⚡ {actionsLeft}/10
                  </span>
               )}
-              <span className="text-sm text-zinc-400 hidden sm:block">
+              <Link 
+                href={`/u/${user.user_metadata.username}`}
+                className="text-sm text-zinc-400 hidden sm:block hover:text-white transition-colors"
+              >
                 Hey, <strong className="text-white">{user.user_metadata.username || 'Citizen'}</strong>
-              </span>
+              </Link>
               <button 
                 onClick={handleSignOut}
                 className="text-zinc-500 hover:text-white font-medium text-sm transition-colors"
