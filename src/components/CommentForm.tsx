@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-export default function CommentForm({ postId, path }: { postId: string, path: string }) {
+export default function CommentForm({ postId, path, parentId = null, onCancel }: { postId: string, path: string, parentId?: string | null, onCancel?: () => void }) {
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -21,36 +21,46 @@ export default function CommentForm({ postId, path }: { postId: string, path: st
         return;
     }
 
-    const res = await createComment(postId, body, session.user.id, path);
+    const res = await createComment(postId, body, session.user.id, path, parentId);
     setLoading(false);
 
     if (res.error) {
         alert(res.error);
     } else {
         setBody('');
+        if (onCancel) onCancel(); // Close reply form
         router.refresh();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 flex gap-4">
-        <div className="w-10 h-10 rounded-full bg-zinc-800 flex-shrink-0"></div>
+    <form onSubmit={handleSubmit} className="mt-4 flex gap-3">
         <div className="flex-1">
             <textarea 
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 required
                 placeholder="What are your thoughts?"
-                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-lg p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder-zinc-500"
-                rows={3}
+                className="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-lg p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder-zinc-500 text-sm"
+                rows={2}
+                autoFocus={!!parentId}
             />
-            <div className="flex justify-end mt-2">
+            <div className="flex justify-end mt-2 gap-2">
+                {onCancel && (
+                    <button 
+                        type="button" 
+                        onClick={onCancel}
+                        className="text-zinc-500 text-xs font-bold px-3 py-1 hover:text-zinc-300"
+                    >
+                        Cancel
+                    </button>
+                )}
                 <button 
                     type="submit" 
                     disabled={loading}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2 px-6 rounded-full transition-all disabled:opacity-50 shadow-lg shadow-emerald-900/20"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-4 rounded-full transition-all disabled:opacity-50"
                 >
-                    {loading ? 'Posting...' : 'Comment'}
+                    {loading ? 'Posting...' : 'Reply'}
                 </button>
             </div>
         </div>

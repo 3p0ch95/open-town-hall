@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import CommentForm from '@/components/CommentForm';
+import CommentThread from '@/components/CommentThread';
 import DeletePostButton from '@/components/DeletePostButton';
 
 export const revalidate = 0;
@@ -22,7 +23,7 @@ export default async function PostPage({ params }: { params: Promise<{ name: str
 
   if (!post) return notFound();
 
-  // 2. Fetch Comments
+  // 2. Fetch Comments (Flat List)
   const { data: comments } = await supabase
     .from('comments')
     .select(`
@@ -32,20 +33,19 @@ export default async function PostPage({ params }: { params: Promise<{ name: str
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
 
-  // 3. Check Mod Status (Server Side)
-  // We need to know if the current viewer is a mod to show the delete button.
-  // BUT we are in a server component with no direct session access unless we use cookies.
-  // For MVP, we will render the button conditionally on the CLIENT (inside the component) 
-  // or just render it and let the server action reject it if unauthorized.
-  // Let's render it but check permissions in the button component logic? 
-  // Better: Fetch moderators list and pass it down.
-  
-  const { data: mods } = await supabase
-    .from('moderators')
-    .select('user_id')
-    .eq('community_id', post.communities.id);
-  
-  const modIds = mods?.map((m: any) => m.user_id) || [];
+  // 3. Build Tree
+  const commentsMap = new Map();
+  const rootComments: any[] = [];
+
+  comments?.forEach(c => {
+      if (c.parent_id) {
+          const list = commentsMap.get(c.parent_id) || [];
+          list.push(c);
+          commentsMap.set(c.parent_id, list);
+      } else {
+          rootComments.push(c);
+      }
+  });
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -89,18 +89,14 @@ export default async function PostPage({ params }: { params: Promise<{ name: str
             <CommentForm postId={post.id} path={`/r/${name}/posts/${postId}`} />
 
             <div className="mt-8 space-y-6">
-                {comments?.map((comment: any) => (
-                    <div key={comment.id} className="flex gap-4 group">
-                        <img src={comment.profiles.avatar_url} className="w-8 h-8 rounded-full bg-zinc-800" />
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
-                                <span className="font-bold text-zinc-300">u/{comment.profiles.username}</span>
-                                <span>•</span>
-                                <span>{new Date(comment.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            </div>
-                            <div className="text-zinc-300 text-sm leading-relaxed">{comment.body}</div>
-                        </div>
-                    </div>
+                {rootComments.map((comment) => (
+                    <CommentThread 
+                        key={comment.id} 
+                        comment={comment} 
+                        commentsMap={commentsMap} 
+                        postId={post.id}
+                        path={`/r/${name}/posts/${postId}`}
+                    />
                 ))}
             </div>
         </div>

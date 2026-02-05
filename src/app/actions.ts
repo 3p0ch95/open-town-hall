@@ -76,7 +76,7 @@ export async function createPost(title: string, body: string, communityId: strin
     return { success: true };
 }
 
-export async function createComment(postId: string, body: string, userId: string, path: string) {
+export async function createComment(postId: string, body: string, userId: string, path: string, parentId: string | null = null) {
     try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
     
     // Need community_id to check ban... fetch post first
@@ -88,7 +88,8 @@ export async function createComment(postId: string, body: string, userId: string
     const { error } = await supabase.from('comments').insert({
         post_id: postId,
         body,
-        author_id: userId
+        author_id: userId,
+        parent_id: parentId
     });
 
     if (error) return { error: error.message };
