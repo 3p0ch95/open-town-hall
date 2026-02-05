@@ -72,6 +72,11 @@ export default async function PostPage({ params }: { params: Promise<{ name: str
                     </div>
 
                     <h1 className="text-2xl font-bold text-white mb-4 leading-snug">{post.title}</h1>
+                    {post.image_url && (
+                        <div className="mb-6 rounded-xl overflow-hidden border border-zinc-800">
+                            <img src={post.image_url} alt="Post content" className="w-full" />
+                        </div>
+                    )}
                     <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap text-lg">{post.body}</p>
                 </div>
             </div>

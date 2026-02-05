@@ -30,6 +30,11 @@ export default function PostCard({ post }: { post: any }) {
           </div>
           <Link href={`/r/${post.communities.name}/posts/${post.id}`} className="block">
             <h2 className="text-lg font-medium text-white leading-snug mb-2 group-hover:text-emerald-400 transition-colors">{post.title}</h2>
+            {post.image_url && (
+                <div className="mb-4 rounded-lg overflow-hidden border border-zinc-800">
+                    <img src={post.image_url} alt="Post content" className="w-full max-h-96 object-cover" />
+                </div>
+            )}
             <p className="text-sm text-zinc-400 mb-4 line-clamp-3">{post.body}</p>
           </Link>
           <div className="flex gap-4 text-xs font-bold text-zinc-500">

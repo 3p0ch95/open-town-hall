@@ -58,13 +58,14 @@ async function checkBan(userId: string, communityId: string) {
     }
 }
 
-export async function createPost(title: string, body: string, communityId: string, userId: string) {
+export async function createPost(title: string, body: string, communityId: string, userId: string, imageUrl: string | null = null) {
     try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
     try { await checkBan(userId, communityId); } catch (e: any) { return { error: e.message }; }
 
     const { error } = await supabase.from('posts').insert({
         title,
         body,
+        image_url: imageUrl,
         community_id: communityId,
         author_id: userId
     });
