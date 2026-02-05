@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/server-supabase';
 import Link from 'next/link';
 import CreatePostForm from '@/components/CreatePostForm';
 import { redirect } from 'next/navigation';
@@ -7,8 +7,9 @@ import PostCard from '@/components/PostCard';
 export const revalidate = 0; // Disable static caching
 
 export default async function Home() {
+  const supabase = await createClient(); // Use SSR client
+
   // 1. Check User Session
-  // Use getUser() instead of getSession() for stricter validation
   const { data: { user } } = await supabase.auth.getUser();
 
   // --------------------------------------------------------------------------
@@ -27,7 +28,7 @@ export default async function Home() {
 
           <div className="relative z-10 max-w-4xl space-y-8">
             <div className="inline-block px-3 py-1 rounded-full border border-zinc-700 bg-zinc-900/50 text-zinc-400 text-xs tracking-widest uppercase">
-              v0.4.1 • System Online
+              v0.4.2 • System Online
             </div>
             
             <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter text-white">
