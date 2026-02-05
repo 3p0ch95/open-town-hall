@@ -27,7 +27,7 @@ export default async function Home() {
 
           <div className="relative z-10 max-w-4xl space-y-8">
             <div className="inline-block px-3 py-1 rounded-full border border-zinc-700 bg-zinc-900/50 text-zinc-400 text-xs tracking-widest uppercase">
-              v0.4.0 • System Online
+              v0.4.1 • System Online
             </div>
             
             <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter text-white">
@@ -50,10 +50,10 @@ export default async function Home() {
                 Join the Republic
               </Link>
               <Link 
-                href="/about" 
+                href="/constitution" 
                 className="border border-zinc-700 hover:bg-zinc-800 text-zinc-300 font-medium text-lg px-8 py-4 rounded-md transition-colors"
               >
-                Read the Constitution
+                View Constitution
               </Link>
             </div>
           </div>
@@ -63,24 +63,27 @@ export default async function Home() {
         <div className="border-t border-zinc-900 bg-zinc-950/50 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl bg-zinc-900/50 border border-zinc-800 hover:border-emerald-500/30 transition-colors">
-              <div className="text-3xl mb-4">🗳️</div>
-              <h3 className="text-xl font-bold text-white mb-2">Democracy First</h3>
+              <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                <span className="text-emerald-500">01.</span> Democracy First
+              </h3>
               <p className="text-zinc-400 text-sm leading-relaxed">
-                Moderators aren't kings. They serve 30-day terms. If they fail the community, vote them out.
+                Moderators serve 30-day terms. If they fail the community, vote them out. Power is temporary and earned.
               </p>
             </div>
             <div className="p-6 rounded-xl bg-zinc-900/50 border border-zinc-800 hover:border-blue-500/30 transition-colors">
-              <div className="text-3xl mb-4">⚡</div>
-              <h3 className="text-xl font-bold text-white mb-2">Scarce Influence</h3>
+              <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                 <span className="text-blue-500">02.</span> Scarce Influence
+              </h3>
               <p className="text-zinc-400 text-sm leading-relaxed">
-                You get <strong>10 Energy</strong> per day. Spend it wisely on posts or votes. High signal, low noise.
+                You get <strong>10 Energy</strong> per day. Spend it wisely on posts or votes. This creates high signal, low noise discussions.
               </p>
             </div>
             <div className="p-6 rounded-xl bg-zinc-900/50 border border-zinc-800 hover:border-purple-500/30 transition-colors">
-              <div className="text-3xl mb-4">🔓</div>
-              <h3 className="text-xl font-bold text-white mb-2">Open Source</h3>
+              <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                 <span className="text-purple-500">03.</span> Open Source
+              </h3>
               <p className="text-zinc-400 text-sm leading-relaxed">
-                The code is public. The database schema is transparent. Nothing is hidden from the user.
+                The code is public. The database schema is transparent. Nothing is hidden from the user. You can verify everything.
               </p>
             </div>
           </div>
@@ -115,16 +118,16 @@ export default async function Home() {
         {/* Left Sidebar - Navigation */}
         <aside className="hidden md:block md:col-span-3 lg:col-span-2 space-y-4">
           <nav className="space-y-1">
-            <a href="#" className="block px-3 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md font-medium">Home</a>
-            <a href="#" className="block px-3 py-2 text-zinc-400 hover:bg-zinc-900 rounded-md transition-colors">Popular</a>
-            <a href="#" className="block px-3 py-2 text-zinc-400 hover:bg-zinc-900 rounded-md transition-colors">All</a>
+            <a href="#" className="block px-3 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md font-medium text-sm">Home</a>
+            <a href="#" className="block px-3 py-2 text-zinc-400 hover:bg-zinc-900 rounded-md transition-colors text-sm">Popular</a>
+            <a href="#" className="block px-3 py-2 text-zinc-400 hover:bg-zinc-900 rounded-md transition-colors text-sm">All</a>
           </nav>
           
           <div className="pt-4 border-t border-zinc-800">
             <h3 className="px-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Communities</h3>
             <div className="mt-2 space-y-1">
               {communities?.map((comm: any) => (
-                <Link key={comm.id} href={`/r/${comm.name}`} className="block px-3 py-2 text-zinc-400 hover:bg-zinc-900 hover:text-white rounded-md truncate transition-colors">
+                <Link key={comm.id} href={`/r/${comm.name}`} className="block px-3 py-2 text-zinc-400 hover:bg-zinc-900 hover:text-white rounded-md truncate transition-colors text-sm">
                   r/{comm.name}
                 </Link>
               ))}
@@ -134,7 +137,7 @@ export default async function Home() {
 
         {/* Main Feed */}
         <div className="md:col-span-9 lg:col-span-7 space-y-6">
-          {/* Create Post Form (Component needs update for dark mode too) */}
+          {/* Create Post Form */}
           <CreatePostForm />
 
           {/* Posts Feed */}
@@ -151,11 +154,16 @@ export default async function Home() {
 
         {/* Right Sidebar - Info */}
         <div className="hidden lg:block lg:col-span-3 space-y-6">
-           <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-sm p-4">
-              <h3 className="font-bold text-white mb-2">Home</h3>
-              <p className="text-sm text-zinc-400 mb-4">Your personal open town hall frontpage.</p>
+           <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-sm p-5">
+              <h3 className="font-bold text-white mb-2 text-sm uppercase tracking-wide">Home Feed</h3>
+              <p className="text-sm text-zinc-400 mb-4 leading-relaxed">
+                Welcome to your personal frontpage. Subscribe to communities to see them here.
+              </p>
               <div className="space-y-2">
-                 <Link href="/communities/create" className="block w-full text-center border border-zinc-700 hover:bg-zinc-800 text-zinc-300 font-bold py-2 px-4 rounded-full transition-colors">Create Community</Link>
+                 <Link href="/communities/create" className="block w-full text-center border border-zinc-700 hover:bg-zinc-800 text-zinc-300 font-bold py-2 px-4 rounded-full transition-colors text-sm">Create Community</Link>
+                 <Link href="/constitution" className="block w-full text-center border border-emerald-900/30 text-emerald-500 hover:bg-emerald-900/20 font-bold py-2 px-4 rounded-full transition-colors text-sm">
+                    View Constitution
+                 </Link>
               </div>
            </div>
            
