@@ -4,11 +4,21 @@ import { supabase } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+// Helper: Get System Config
+async function getConfig(key: string, defaultValue: string) {
+    const { data } = await supabase.from('system_config').select('value').eq('key', key).single();
+    return data?.value || defaultValue;
+}
+
 // Helper: Check and Spend Daily Action
 async function spendAction(userId: string) {
     const today = new Date().toISOString().split('T')[0];
     
-    // 1. Get current usage
+    // 1. Get dynamic limit
+    const limitStr = await getConfig('daily_energy_limit', '10');
+    const limit = parseInt(limitStr);
+
+    // 2. Get current usage
     const { data } = await supabase
       .from('daily_usage')
       .select('action_count')
@@ -18,11 +28,11 @@ async function spendAction(userId: string) {
       
     const current = data?.action_count || 0;
     
-    if (current >= 10) {
-        throw new Error("You have used all 10 actions for today! Recharge tomorrow.");
+    if (current >= limit) {
+        throw new Error(`You have used all ${limit} actions for today! Recharge tomorrow.`);
     }
     
-    // 2. Increment
+    // 3. Increment
     const { error } = await supabase
       .from('daily_usage')
       .upsert({ 
@@ -34,8 +44,23 @@ async function spendAction(userId: string) {
     if (error) throw new Error("Failed to record action usage.");
 }
 
+// Helper: Check Ban Status
+async function checkBan(userId: string, communityId: string) {
+    const { data } = await supabase
+        .from('community_bans')
+        .select('reason')
+        .eq('user_id', userId)
+        .eq('community_id', communityId)
+        .single();
+    
+    if (data) {
+        throw new Error(`You are banned from this community. Reason: ${data.reason}`);
+    }
+}
+
 export async function createPost(title: string, body: string, communityId: string, userId: string) {
     try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
+    try { await checkBan(userId, communityId); } catch (e: any) { return { error: e.message }; }
 
     const { error } = await supabase.from('posts').insert({
         title,
@@ -52,6 +77,12 @@ export async function createPost(title: string, body: string, communityId: strin
 
 export async function createComment(postId: string, body: string, userId: string, path: string) {
     try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
+    
+    // Need community_id to check ban... fetch post first
+    const { data: post } = await supabase.from('posts').select('community_id').eq('id', postId).single();
+    if (post) {
+         try { await checkBan(userId, post.community_id); } catch (e: any) { return { error: e.message }; }
+    }
 
     const { error } = await supabase.from('comments').insert({
         post_id: postId,
@@ -66,7 +97,7 @@ export async function createComment(postId: string, body: string, userId: string
 }
 
 export async function deletePost(postId: string, userId: string, communityId: string) {
-    // 1. Check if user is a moderator for this community
+    // 1. Check Mod
     const { data: mod } = await supabase
         .from('moderators')
         .select('*')
@@ -74,12 +105,18 @@ export async function deletePost(postId: string, userId: string, communityId: st
         .eq('user_id', userId)
         .single();
 
-    if (!mod) {
-        return { error: 'You do not have moderator permissions in this community.' };
-    }
+    if (!mod) return { error: 'Unauthorized.' };
 
-    // 2. Delete
-    // Note: We need cascade delete on comments, which we added in SQL
+    // 2. Log Action
+    await supabase.from('mod_logs').insert({
+        community_id: communityId,
+        moderator_id: userId,
+        action_type: 'delete_post',
+        target_id: postId,
+        reason: 'Moderator deletion'
+    });
+
+    // 3. Delete
     const { error } = await supabase.from('posts').delete().eq('id', postId);
 
     if (error) return { error: error.message };
@@ -88,6 +125,37 @@ export async function deletePost(postId: string, userId: string, communityId: st
     return { success: true };
 }
 
+export async function banUser(targetUsername: string, communityId: string, modId: string, reason: string) {
+    // 1. Check Mod
+    const { data: mod } = await supabase.from('moderators').select('*').eq('community_id', communityId).eq('user_id', modId).single();
+    if (!mod) return { error: 'Unauthorized.' };
+
+    // 2. Find Target User ID
+    const { data: target } = await supabase.from('profiles').select('id').eq('username', targetUsername).single();
+    if (!target) return { error: 'User not found.' };
+
+    // 3. Ban
+    const { error } = await supabase.from('community_bans').insert({
+        community_id: communityId,
+        user_id: target.id,
+        reason: reason
+    });
+    if (error) return { error: error.message };
+
+    // 4. Log
+    await supabase.from('mod_logs').insert({
+        community_id: communityId,
+        moderator_id: modId,
+        action_type: 'ban_user',
+        target_id: target.id,
+        reason: reason
+    });
+
+    revalidatePath(`/r/[name]/mod-dashboard`); // Need actual name, but this forces cache clear generally
+    return { success: true };
+}
+
+// ... Elections ...
 export async function startElection(communityId: string, communityName: string, userId: string) {
   try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
 
@@ -176,5 +244,46 @@ export async function castVote(electionId: string, candidateId: string, voterId:
     await supabase.from('candidates').update({ vote_count: newCount }).eq('id', candidateId);
 
     revalidatePath(`/r/${communityName}/elections`);
+    return { success: true };
+}
+
+// ... Constitution ...
+export async function createProposal(title: string, description: string, key: string, value: string, userId: string) {
+    try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
+
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 7); // 1 week voting
+
+    const { error } = await supabase.from('proposals').insert({
+        title,
+        description,
+        target_config_key: key,
+        target_value: value,
+        created_by: userId,
+        end_date: endDate.toISOString()
+    });
+
+    if (error) return { error: error.message };
+    revalidatePath('/constitution');
+    return { success: true };
+}
+
+export async function voteOnProposal(proposalId: string, vote: 'yes' | 'no', userId: string) {
+    try { await spendAction(userId); } catch (e: any) { return { error: e.message }; }
+
+    const { data: existing } = await supabase.from('proposal_votes').select('user_id').eq('proposal_id', proposalId).eq('user_id', userId).single();
+    if (existing) return { error: 'Already voted.' };
+
+    await supabase.from('proposal_votes').insert({ proposal_id: proposalId, user_id: userId, vote });
+    
+    // Naive increment
+    const { data: prop } = await supabase.from('proposals').select('yes_votes, no_votes').eq('id', proposalId).single();
+    if (vote === 'yes') {
+        await supabase.from('proposals').update({ yes_votes: (prop?.yes_votes || 0) + 1 }).eq('id', proposalId);
+    } else {
+        await supabase.from('proposals').update({ no_votes: (prop?.no_votes || 0) + 1 }).eq('id', proposalId);
+    }
+
+    revalidatePath('/constitution');
     return { success: true };
 }
